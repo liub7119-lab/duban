@@ -1,26 +1,89 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ===== 读伴 水墨主题色板 ===== */
+@theme {
+  --color-ink: #2c2416;          /* 墨色 */
+  --color-ink-light: #5b4d3a;    /* 淡墨 */
+  --color-paper: #f5f0e6;        /* 宣纸底 */
+  --color-paper-dark: #ece3d2;   /* 深宣纸 */
+  --color-bamboo: #6b8e7f;       /* 竹青 */
+  --color-bamboo-dark: #547065;  /* 深竹青 */
+  --color-seal: #9b3a3a;         /* 朱砂印 */
+  --color-wood: #8b6f47;         /* 木纹 */
+  --color-wood-dark: #6b5235;    /* 深木 */
+
+  --font-serif: var(--font-noto-serif-sc), "Noto Serif SC", "Songti SC", serif;
+  --font-sans: var(--font-noto-serif-sc), "Noto Serif SC", serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  --background: var(--color-paper);
+  --foreground: var(--color-ink);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* 水墨主题保持浅色,不做深色反转 —— 古朴阅读应始终如宣纸 */
+    --background: var(--color-paper);
+    --foreground: var(--color-ink);
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-paper);
+  background-image:
+    radial-gradient(rgba(139, 111, 71, 0.04) 1px, transparent 1px);
+  background-size: 18px 18px;
+  color: var(--color-ink);
+  font-family: var(--font-serif);
 }
+
+/* 毛边卡片:不规则阴影 + 细边,模拟纸张 */
+.ink-card {
+  background: linear-gradient(180deg, #faf6ec 0%, var(--color-paper) 100%);
+  border: 1px solid rgba(44, 36, 22, 0.12);
+  box-shadow:
+    2px 3px 0 rgba(44, 36, 22, 0.06),
+    4px 6px 12px rgba(44, 36, 22, 0.08);
+  border-radius: 4px;
+}
+
+/* 朱砂印章风格小标记 */
+.seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-seal);
+  color: var(--color-paper);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  border-radius: 3px;
+}
+
+/* 阅读正文 */
+.reader-text {
+  font-family: var(--font-serif);
+  line-height: 2.1;
+  letter-spacing: 0.02em;
+  color: var(--color-ink);
+}
+
+/* 高亮(选中段落) */
+mark.note-mark {
+  background: rgba(155, 58, 58, 0.18);
+  color: inherit;
+  border-bottom: 1px dashed var(--color-seal);
+  padding: 0 1px;
+}
+
+/* 滚动条更柔和 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(107, 142, 127, 0.35);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(107, 142, 127, 0.6); }
+
+/* 链接 */
+a { color: var(--color-bamboo-dark); }

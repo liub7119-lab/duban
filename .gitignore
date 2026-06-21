@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# 读伴 —— 数据库与上传文件
+/prisma/dev.db*
+/data/
+/uploads/
+
+# 本地 CLAUDE 笔记
+CLAUDE.md
+AGENTS.md
