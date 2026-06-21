@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    image: duban:latest
+    container_name: duban-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # ---- 数据库(SQLite 用本地文件,挂载到 /app/data)----
+      DATABASE_URL: "file:/app/data/dev.db"
+      # Postgres 时改为:postgresql://duban:password@db:5432/duban
+      # ---- 认证 ----
+      AUTH_SECRET: "${AUTH_SECRET:-please-change-me-32-chars-min-xxxxxxxxx}"
+      AUTH_URL: "${AUTH_URL:-http://localhost:3000}"
+      # ---- AI ----
+      AI_API_KEY: "${AI_API_KEY:-}"
+      AI_BASE_URL: "${AI_BASE_URL:-https://api.openai.com/v1}"
+      AI_CHAT_MODEL: "${AI_CHAT_MODEL:-gpt-4o-mini}"
+      AI_EMBED_MODEL: "${AI_EMBED_MODEL:-text-embedding-3-small}"
+      # ---- 配额 ----
+      QUOTA_MAX_TOKENS_PER_DAY: "${QUOTA_MAX_TOKENS_PER_DAY:-200000}"
+      QUOTA_MAX_MESSAGES_PER_DAY: "${QUOTA_MAX_MESSAGES_PER_DAY:-100}"
+      # ---- 上传 ----
+      MAX_UPLOAD_MB: "${MAX_UPLOAD_MB:-30}"
+      # ---- 注册 ----
+      ALLOW_SIGNUP: "${ALLOW_SIGNUP:-true}"
+    volumes:
+      - duban_data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/books 2>/dev/null || true"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  duban_data:
+    name: duban_data

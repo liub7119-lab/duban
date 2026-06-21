@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.local
+.DS_Store
+*.log
+prisma/dev.db*
+prisma/dev.db-journal
+prisma/migrations/dev/
+data/
+uploads/
+scripts/
+*.md
+CLAUDE.md
+AGENTS.md
