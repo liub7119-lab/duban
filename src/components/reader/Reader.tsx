@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useSelectionPopover, SelectionPopover } from "./SelectionPopover";
+import { ChatPanel } from "./ChatPanel";
 
 type ChapterMeta = { index: number; title: string; charCount: number };
 type ChapterData = { index: number; title: string; content: string };
@@ -30,8 +32,41 @@ export function Reader({
   const [lineHeight, setLineHeight] = useState(2.1);
   const [vertical, setVertical] = useState(false);
 
+  // 选区 & 聊天
+  const [chatOpen, setChatOpen] = useState(false);
+  const [initialAsk, setInitialAsk] = useState<string | null>(null);
+  const { sel, clear: clearSel } = useSelectionPopover("[data-chapter-content]");
+
   const contentRef = useRef<HTMLDivElement>(null);
   const lastReport = useRef(Date.now());
+
+  async function askAI(text: string) {
+    setInitialAsk(text);
+    setChatOpen(true);
+    clearSel();
+  }
+
+  async function makeNote(text: string) {
+    try {
+      await fetch(`/api/books/${bookId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chapterIndex: chapterIdx,
+          startChar: 0,
+          endChar: text.length,
+          quote: text,
+        }),
+      });
+      clearSel();
+      // 简易反馈
+      const note = document.createElement("div");
+      note.textContent = "已摘录 ✦";
+      note.className = "fixed top-20 left-1/2 -translate-x-1/2 bg-seal text-paper px-4 py-1.5 rounded text-sm z-50 shadow-lg";
+      document.body.appendChild(note);
+      setTimeout(() => note.remove(), 1500);
+    } catch {}
+  }
 
   // 从 localStorage 恢复阅读偏好
   useEffect(() => {
@@ -133,15 +168,23 @@ export function Reader({
         >
           <span className="text-lg">≡</span> 目录
         </button>
-        <span className="text-ink-light truncate mx-4">
+        <span className="text-ink-light truncate mx-4 flex-1 text-center">
           {title} · 第 {chapterIdx + 1}/{chapters.length} 章
         </span>
-        <button
-          onClick={() => setSettingsOpen(true)}
-          className="text-ink-light hover:text-ink"
-        >
-          ⚙ 设置
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setChatOpen(true)}
+            className="text-bamboo-dark hover:text-bamboo font-medium"
+          >
+            💬 边读边聊
+          </button>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="text-ink-light hover:text-ink"
+          >
+            ⚙ 设置
+          </button>
+        </div>
       </div>
 
       {/* 正文区 */}
@@ -254,6 +297,35 @@ export function Reader({
             </button>
           </Setting>
         </Drawer>
+      )}
+
+      {/* 选区操作气泡 */}
+      {sel && (
+        <SelectionPopover
+          sel={sel}
+          onAsk={askAI}
+          onNote={makeNote}
+          onClose={clearSel}
+        />
+      )}
+
+      {/* 边读边聊抽屉 */}
+      {chatOpen && (
+        <div className="fixed inset-0 z-40 flex">
+          <div
+            className="flex-1 bg-ink/30"
+            onClick={() => setChatOpen(false)}
+          />
+          <aside className="w-96 max-w-[90vw] bg-paper border-l border-wood/20 shadow-xl flex flex-col">
+            <ChatPanel
+              bookId={bookId}
+              chapterIndex={chapterIdx}
+              initialAsk={initialAsk}
+              onInitialAskConsumed={() => setInitialAsk(null)}
+              onClose={() => setChatOpen(false)}
+            />
+          </aside>
+        </div>
       )}
     </div>
   );
