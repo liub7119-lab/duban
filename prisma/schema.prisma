@@ -142,6 +142,15 @@ model UserQuota {
   resetAt    DateTime
 }
 
+model ReadingDay {
+  userId     String
+  day        String
+  ms         Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@id([userId, day])
+}
+
 model Summary {
   id           String   @id @default(cuid())
   bookId       String

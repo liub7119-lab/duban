@@ -223,12 +223,19 @@ export function Reader({
                 >
                   ← 上一章
                 </button>
-                <Link
-                  href={`/library`}
-                  className="text-xs text-ink-light/60 hover:text-ink"
-                >
-                  返回书架
-                </Link>
+                <div className="flex items-center gap-3 text-xs text-ink-light/70">
+                  <Link href={`/book/${bookId}/notes`} className="hover:text-bamboo-dark">
+                    笔记
+                  </Link>
+                  <span>·</span>
+                  <Link href={`/book/${bookId}/summary`} className="hover:text-bamboo-dark">
+                    总结
+                  </Link>
+                  <span>·</span>
+                  <Link href="/library" className="hover:text-bamboo-dark">
+                    书架
+                  </Link>
+                </div>
                 <button
                   onClick={() => goChapter(chapterIdx + 1)}
                   disabled={!hasNext}

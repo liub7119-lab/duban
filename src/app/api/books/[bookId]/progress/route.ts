@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUser, assertOwned } from "@/server/guard";
+import { todayKey } from "@/lib/utils";
 
 // 上报/读取进度
 export async function GET(
@@ -54,6 +55,15 @@ export async function POST(
       readingMs: { increment: deltaMs },
     },
   });
+
+  if (deltaMs > 0) {
+    const day = todayKey();
+    await prisma.readingDay.upsert({
+      where: { userId_day: { userId: user.id, day } },
+      create: { userId: user.id, day, ms: deltaMs },
+      update: { ms: { increment: deltaMs } },
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }
