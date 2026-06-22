@@ -29,7 +29,7 @@ async function summarizeChunk(text: string, scope: "BOOK" | "CHAPTER"): Promise<
       ? `请为以下内容写一段整体摘要(200~400 字),保留关键情节、人物、主要观点。`
       : `请为以下章节写一段摘要(150~300 字),交代该章主要事件与意图。`;
   const r = await ai().chat.completions.create({
-    model: await CHAT_MODEL(),
+    model: CHAT_MODEL(),
     messages: [
       { role: "system", content: "你是读伴,擅长撰写条理清晰的摘要,使用简体中文。" },
       { role: "user", content: `${prompt}\n\n---\n${text}` },
@@ -73,7 +73,7 @@ export async function generateBookSummary(bookId: string, userId: string): Promi
     final = partials[0];
   } else {
     const merged = await ai().chat.completions.create({
-      model: await CHAT_MODEL(),
+      model: CHAT_MODEL(),
       messages: [
         { role: "system", content: "你是读伴,综合若干段章节摘要,生成全书摘要(300~600 字),要条理清晰、抓住主线。使用简体中文。" },
         { role: "user", content: partials.join("\n\n") },

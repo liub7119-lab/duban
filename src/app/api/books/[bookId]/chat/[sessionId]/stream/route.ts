@@ -86,7 +86,7 @@ export async function POST(
   await maybeAutoTitle(sessionId, message);
 
   // 流式请求
-  const model = await CHAT_MODEL();
+  const model = CHAT_MODEL();
   const openaiStream = await ai().chat.completions.create({
     model,
     messages: messages.concat([{ role: "user", content: message }]),
