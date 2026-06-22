@@ -64,7 +64,21 @@ docker compose logs -f app
 
 数据通过 named volume `duban_data` 持久化(挂载在容器内 `/app/data`,含 SQLite 数据库与上传文件)。
 
-如需切换到 PostgreSQL:取消 `docker-compose.yml` 里 postgres 服务的注释,并把 `DATABASE_URL` 改为对应连接串。
+如需切换到 PostgreSQL:`docker compose --profile postgres up -d` 并改 `DATABASE_URL`。详见 [docs/DATABASE.md](docs/DATABASE.md)。
+
+### Vercel 部署(公网 + 手机访问)
+
+```bash
+npm i -g vercel
+vercel
+```
+
+按提示绑定 Neon Postgres + Vercel Blob,完整步骤见 [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md)。
+
+## 📚 文档
+
+- [docs/DATABASE.md](docs/DATABASE.md) —— SQLite/Postgres 切换 + 备份恢复
+- [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md) —— Vercel + Neon + Blob 部署
 
 ## 📂 项目结构
 

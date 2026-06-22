@@ -1,3 +1,15 @@
+# 读伴 一键部署
+#
+# 默认 SQLite 模式(单机轻量):
+#   docker compose up -d
+#
+# 生产 Postgres 模式(推荐,支持高并发与备份):
+#   docker compose --profile postgres up -d
+#
+# 切换前请先:
+#   1. 修改 .env 里的 DATABASE_URL 为 postgresql://...
+#   2. 修改 schema.prisma datasource provider 为 postgresql 并迁移
+
 version: "3.9"
 
 services:
@@ -9,17 +21,19 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # ---- 数据库(SQLite 用本地文件,挂载到 /app/data)----
-      DATABASE_URL: "file:/app/data/dev.db"
-      # Postgres 时改为:postgresql://duban:password@db:5432/duban
+      # ---- 数据库 ----
+      # 默认 SQLite(文件挂载到 /app/data)
+      DATABASE_URL: "${DATABASE_URL:-file:/app/data/dev.db}"
+      # Postgres 模式(配合 --profile postgres):
+      # DATABASE_URL: "postgresql://duban:${DB_PASSWORD:-dubanpass}@db:5432/duban"
       # ---- 认证 ----
       AUTH_SECRET: "${AUTH_SECRET:-please-change-me-32-chars-min-xxxxxxxxx}"
       AUTH_URL: "${AUTH_URL:-http://localhost:3000}"
       # ---- AI ----
       AI_API_KEY: "${AI_API_KEY:-}"
-      AI_BASE_URL: "${AI_BASE_URL:-https://api.openai.com/v1}"
-      AI_CHAT_MODEL: "${AI_CHAT_MODEL:-gpt-4o-mini}"
-      AI_EMBED_MODEL: "${AI_EMBED_MODEL:-text-embedding-3-small}"
+      AI_BASE_URL: "${AI_BASE_URL:-https://api.siliconflow.cn/v1}"
+      AI_CHAT_MODEL: "${AI_CHAT_MODEL:-/}"
+      AI_EMBED_MODEL: "${AI_EMBED_MODEL:-BAAI/bge-m3}"
       # ---- 配额 ----
       QUOTA_MAX_TOKENS_PER_DAY: "${QUOTA_MAX_TOKENS_PER_DAY:-200000}"
       QUOTA_MAX_MESSAGES_PER_DAY: "${QUOTA_MAX_MESSAGES_PER_DAY:-100}"
@@ -34,7 +48,32 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    # Postgres 模式时等待 db 就绪
+    depends_on:
+      db:
+        condition: service_healthy
+        required: false
+
+  # Postgres 服务(Postgres 模式才启动)
+  db:
+    image: postgres:16-alpine
+    container_name: duban-db
+    restart: unless-stopped
+    profiles: ["postgres"]
+    environment:
+      POSTGRES_USER: ${DB_USER:-duban}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-dubanpass}
+      POSTGRES_DB: ${DB_NAME:-duban}
+    volumes:
+      - duban_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-duban}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   duban_data:
     name: duban_data
+  duban_pgdata:
+    name: duban_pgdata
