@@ -44,6 +44,7 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+/src/generated/pg-client
 
 # 读伴 —— 数据库与上传文件
 /prisma/dev.db*

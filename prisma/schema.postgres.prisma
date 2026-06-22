@@ -1,0 +1,164 @@
+// 读伴 PostgreSQL schema —— 用于 Vercel/Neon 部署
+// 与 schema.prisma(SQLite)字段完全一致,仅 provider 不同。
+// 改 schema 时请两份同步。
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/pg-client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?
+  image        String?
+  role         String   @default("USER")
+  createdAt    DateTime @default(now())
+
+  books    Book[]
+  sessions ChatSession[]
+  progress ReadingProgress[]
+  notes    Note[]
+  usage    UsageRecord[]
+  quota    UserQuota?
+}
+
+model Book {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  author      String?
+  coverPath   String?
+  sourcePath  String
+  format      String
+  language    String?
+  totalChars  Int      @default(0)
+  status      String   @default("PROCESSING")
+  errorMsg    String?
+  createdAt   DateTime @default(now())
+
+  chapters Chapter[]
+  progress ReadingProgress[]
+  notes    Note[]
+  sessions ChatSession[]
+  summaries Summary[]
+}
+
+model Chapter {
+  id        String @id @default(cuid())
+  bookId    String
+  book      Book   @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  index     Int
+  title     String
+  content   String
+  charCount Int
+
+  @@index([bookId])
+  @@unique([bookId, index])
+}
+
+model ReadingProgress {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId       String
+  book         Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapterIndex Int      @default(0)
+  scrollRatio  Float    @default(0)
+  percent      Float    @default(0)
+  readingMs    Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, bookId])
+}
+
+model Note {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId       String
+  book         Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapterIndex Int
+  startChar    Int
+  endChar      Int
+  quote        String
+  note         String?
+  color        String?
+  createdAt    DateTime @default(now())
+}
+
+model ChatSession {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId       String
+  book         Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  chapterIndex Int?
+  title        String?
+  createdAt    DateTime @default(now())
+
+  messages Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String
+  content   String
+  selection String?
+  tokensIn  Int      @default(0)
+  tokensOut Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model UsageRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookId    String?
+  type      String
+  tokensIn  Int
+  tokensOut Int
+  day       String
+  createdAt DateTime @default(now())
+
+  @@index([userId, day])
+}
+
+model UserQuota {
+  userId     String   @id
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day        String
+  tokensUsed Int     @default(0)
+  msgsUsed   Int     @default(0)
+  resetAt    DateTime
+}
+
+model ReadingDay {
+  userId     String
+  day        String
+  ms         Int      @default(0)
+  updatedAt  DateTime @updatedAt
+
+  @@id([userId, day])
+}
+
+model Summary {
+  id           String   @id @default(cuid())
+  bookId       String
+  book         Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  scope        String
+  chapterIndex Int?
+  content      String
+  createdAt    DateTime @default(now())
+
+  @@unique([bookId, scope, chapterIndex])
+}

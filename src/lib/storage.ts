@@ -1,46 +1,23 @@
-import { promises as fs } from "fs";
-import path from "path";
-import { randomUUID } from "crypto";
+// 存储抽象层:根据部署环境自动分发到本地文件系统 或 Vercel Blob。
+// 调用方无需关心具体实现,统一用这些函数。
+//
+// - 本地/Docker/自托管 �� storage-local.ts(本地 fs)
+// - Vercel 部署         → storage-blob.ts(Vercel Blob,需配 BLOB_READ_WRITE_TOKEN)
 
-// 存储抽象:本地文件系统实现。生产可换 S3/R2(实现同接口即可)。
-// 用字面量根,避免 Turbopack 动态路径分析告警;环境变量优先。
-const ROOT =
-  process.env.STORAGE_DIR || path.join(process.cwd(), "data");
+export type * from "./storage-local";
 
-export async function saveUpload(
-  userId: string,
-  ext: string,
-  data: Uint8Array
-): Promise<string> {
-  const dir = path.join(ROOT, "uploads", userId);
-  await fs.mkdir(dir, { recursive: true });
-  const filename = `${randomUUID()}.${ext}`;
-  const full = path.join(dir, filename);
-  await fs.writeFile(full, data);
-  // 返回相对标识(供后续读取)
-  return path.join("uploads", userId, filename);
-}
+// 用动态条件 re-export
+// Next.js / Turbopack 支持这种"运行时分发",
+// 但为了让 tree-shaking 与静态分析友好,我们用显式判断的 wrapper。
 
-export async function readUpload(relPath: string): Promise<Buffer> {
-  return fs.readFile(path.join(ROOT, relPath));
-}
+import * as local from "./storage-local";
+import * as blob from "./storage-blob";
 
-export async function saveCover(
-  userId: string,
-  bookId: string,
-  buffer: Buffer
-): Promise<string> {
-  const dir = path.join(ROOT, "covers", userId);
-  await fs.mkdir(dir, { recursive: true });
-  const filename = `${bookId}.jpg`;
-  await fs.writeFile(path.join(dir, filename), buffer);
-  return path.join("covers", userId, filename);
-}
+const IS_VERCEL = !!process.env.VERCEL;
+const impl = IS_VERCEL ? blob : local;
 
-export async function readBytes(relPath: string): Promise<Buffer> {
-  return fs.readFile(path.join(ROOT, relPath));
-}
-
-export function resolveUploadPath(relPath: string): string {
-  return path.join(ROOT, relPath);
-}
+export const saveUpload = impl.saveUpload;
+export const readUpload = impl.readUpload;
+export const saveCover = impl.saveCover;
+export const readBytes = impl.readBytes;
+export const resolveUploadPath = impl.resolveUploadPath;

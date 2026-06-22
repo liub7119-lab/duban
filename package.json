@@ -6,11 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "prisma generate && DATABASE_URL=postgresql://placeholder@localhost:5432/placeholder prisma generate --schema=prisma/schema.postgres.prisma"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
     "@prisma/client": "^6.19.3",
+    "@vercel/blob": "^2.4.1",
     "bcryptjs": "^3.0.3",
     "epub2": "^3.0.2",
     "iconv-lite": "^0.7.2",
