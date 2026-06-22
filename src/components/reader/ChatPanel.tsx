@@ -39,7 +39,20 @@ export function ChatPanel({
   const [error, setError] = useState("");
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [showSessions, setShowSessions] = useState(false);
+  const [maxTokens, setMaxTokens] = useState(800);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Load max_tokens from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("chat:maxTokens");
+    if (saved) setMaxTokens(Number(saved));
+  }, []);
+
+  // Save max_tokens
+  useEffect(() => {
+    localStorage.setItem("chat:maxTokens", String(maxTokens));
+  }, [maxTokens]);
 
   // 加载会话列表
   const loadSessions = useCallback(async () => {
@@ -91,7 +104,7 @@ export function ChatPanel({
     // 重新拉列表(让新会话出现在最前)
     loadSessions();
     return d.session.id as string;
-  }, [bookId, chapterIndex, loadSessions]);
+  }, [bookId, chapterIndex, maxTokens, loadSessions]);
 
   // 切换会话
   async function switchSession(sid: string) {
@@ -129,6 +142,7 @@ export function ChatPanel({
           body: JSON.stringify({
             message: text,
             chapterIndex,
+            maxTokens,
             selection: selectionQuote
               ? { chapterIndex, start: 0, end: selectionQuote.length, quote: selectionQuote }
               : undefined,
@@ -219,109 +233,157 @@ export function ChatPanel({
     sessions.find((s) => s.id === activeSessionId)?.title || (activeSessionId ? "对话" : "新对话");
 
   return (
-    <div className="flex h-full">
-      {/* 会话列表侧栏 */}
-      <aside className="w-44 border-r border-wood/20 bg-paper-dark/30 flex flex-col shrink-0">
-        <div className="p-2 border-b border-wood/15">
+    <div className="flex flex-col h-full">
+      {/* 顶栏:移动端紧凑布局 */}
+      <div className="flex items-center justify-between px-3 sm:px-4 h-11 sm:h-12 border-b border-wood/20 shrink-0">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {/* 移动端切换会话列表按钮 */}
           <button
-            onClick={createNewSession}
-            disabled={sending}
-            className="w-full text-xs bg-bamboo text-paper rounded py-1.5 hover:bg-bamboo-dark disabled:opacity-50"
+            onClick={() => setShowSessions(!showSessions)}
+            className="sm:hidden text-ink-light hover:text-ink text-base"
+            title="会话列表"
           >
-            + 新对话
+            ≡
           </button>
-        </div>
-        <div className="flex-1 overflow-auto">
-          {loadingSessions && sessions.length === 0 ? (
-            <p className="text-xs text-ink-light/60 p-3 text-center">载入中…</p>
-          ) : sessions.length === 0 ? (
-            <p className="text-xs text-ink-light/60 p-3 text-center">暂无对话</p>
-          ) : (
-            <ul>
-              {sessions.map((s) => (
-                <li key={s.id}>
-                  <button
-                    onClick={() => switchSession(s.id)}
-                    className={cn(
-                      "w-full text-left px-2.5 py-2 text-xs group flex items-start gap-1",
-                      s.id === activeSessionId
-                        ? "bg-bamboo/15 text-bamboo-dark"
-                        : "hover:bg-paper text-ink-light"
-                    )}
-                  >
-                    <span className="flex-1 truncate">
-                      {s.title || "新对话"}
-                    </span>
-                    <span
-                      onClick={(e) => deleteSession(s.id, e)}
-                      className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-ink-light hover:text-seal shrink-0"
-                      title="删除"
-                    >
-                      ×
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </aside>
-
-      {/* 主对话区 */}
-      <div className="flex flex-col flex-1 min-w-0">
-        <div className="flex items-center justify-between px-4 h-12 border-b border-wood/20 shrink-0">
-          <h3 className="font-bold text-ink tracking-wider truncate" title={activeTitle}>
+          <h3 className="font-bold text-ink tracking-wider truncate text-sm sm:text-base" title={activeTitle}>
             {activeTitle}
           </h3>
-          <button onClick={onClose} className="text-ink-light hover:text-ink text-xl shrink-0 ml-2">
+        </div>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2">
+          {/* 回复字数控制 */}
+          <label className="hidden sm:flex items-center gap-2 text-xs text-ink-light" title="回复最大字数">
+            <span>字</span>
+            <input
+              type="number"
+              min={200}
+              max={4000}
+              step={100}
+              value={maxTokens}
+              onChange={(e) => setMaxTokens(Number(e.target.value))}
+              className="w-16 rounded border border-wood/30 bg-paper px-1 py-0.5 text-xs"
+            />
+          </label>
+          <button onClick={onClose} className="text-ink-light hover:text-ink text-xl" title="关闭">
             ×
           </button>
         </div>
+      </div>
 
-        <div ref={scrollRef} className="flex-1 overflow-auto px-4 py-4 space-y-4">
-          {loadingHistory ? (
-            <p className="text-center text-ink-light/70 text-sm py-10">载入对话中…</p>
-          ) : messages.length === 0 && !sending ? (
-            <div className="text-center text-ink-light/70 text-sm py-10">
-              <p className="mb-2">{activeSessionId ? "这条对话还没有消息。" : "读至兴处,不妨问问「读伴」。"}</p>
-              <p className="text-xs">可解读人物、赏析文笔、答疑典故……</p>
-            </div>
-          ) : (
-            messages.map((m, i) => (
-              <div
-                key={m.id ?? i}
-                className={cn(
-                  "max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed",
-                  m.role === "user"
-                    ? "ml-auto bg-bamboo text-paper"
-                    : "mr-auto bg-paper-dark text-ink whitespace-pre-wrap"
-                )}
-              >
-                {m.content || (sending && i === messages.length - 1 ? "…" : "")}
-              </div>
-            ))
-          )}
-          {error && <p className="text-seal text-xs text-center">{error}</p>}
-        </div>
-
-        <form onSubmit={onSubmit} className="border-t border-wood/20 p-3 shrink-0">
-          <div className="flex gap-2">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={sending ? "回答中…" : "说点什么…"}
-              disabled={sending}
-              className="flex-1 rounded border border-wood/30 bg-paper px-3 py-2 text-sm outline-none focus:border-bamboo"
-            />
+      <div className="flex flex-1 min-h-0 relative">
+        {/* 会话列表:移动端覆盖层,桌面端常驻 */}
+        <aside className={cn(
+          "border-r border-wood/20 bg-paper-dark/30 flex flex-col shrink-0",
+          "w-36 sm:w-44",
+          "absolute inset-y-0 left-0 z-10 sm:relative",
+          showSessions ? "translate-x-0" : "-translate-x-full sm:translate-x-0"
+        )}>
+          <div className="p-2 border-b border-wood/15">
             <button
-              type="submit"
-              disabled={sending || !input.trim()}
-              className="rounded bg-bamboo text-paper px-4 text-sm disabled:opacity-50"
+              onClick={() => { createNewSession(); setShowSessions(false); }}
+              disabled={sending}
+              className="w-full text-xs bg-bamboo text-paper rounded py-1.5 hover:bg-bamboo-dark disabled:opacity-50"
             >
-              发送
+              + 新对话
             </button>
           </div>
-        </form>
+          <div className="flex-1 overflow-auto">
+            {loadingSessions && sessions.length === 0 ? (
+              <p className="text-xs text-ink-light/60 p-3 text-center">载入中…</p>
+            ) : sessions.length === 0 ? (
+              <p className="text-xs text-ink-light/60 p-3 text-center">暂无对话</p>
+            ) : (
+              <ul>
+                {sessions.map((s) => (
+                  <li key={s.id}>
+                    <button
+                      onClick={() => { switchSession(s.id); setShowSessions(false); }}
+                      className={cn(
+                        "w-full text-left px-2.5 py-2 text-xs group flex items-start gap-1",
+                        s.id === activeSessionId
+                          ? "bg-bamboo/15 text-bamboo-dark"
+                          : "hover:bg-paper text-ink-light"
+                      )}
+                    >
+                      <span className="flex-1 truncate">
+                        {s.title || "新对话"}
+                      </span>
+                      <span
+                        onClick={(e) => deleteSession(s.id, e)}
+                        className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-ink-light hover:text-seal shrink-0"
+                        title="删除"
+                      >
+                        ×
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </aside>
+
+        {/* 主对话区 */}
+        <div className="flex flex-col flex-1 min-w-0">
+          <div ref={scrollRef} className="flex-1 overflow-auto px-3 sm:px-4 py-3 sm:py-4 space-y-3 sm:space-y-4">
+            {loadingHistory ? (
+              <p className="text-center text-ink-light/70 text-sm py-10">载入对话中…</p>
+            ) : messages.length === 0 && !sending ? (
+              <div className="text-center text-ink-light/70 text-sm py-10">
+                <p className="mb-2">{activeSessionId ? "这条对话还没有消息。" : "读至兴处,不妨问问「读伴」。"}</p>
+                <p className="text-xs">可解读人物、赏析文笔、答疑典故……</p>
+              </div>
+            ) : (
+              messages.map((m, i) => (
+                <div
+                  key={m.id ?? i}
+                  className={cn(
+                    "max-w-[90%] sm:max-w-[85%] rounded-lg px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm leading-relaxed",
+                    m.role === "user"
+                      ? "ml-auto bg-bamboo text-paper"
+                      : "mr-auto bg-paper-dark text-ink whitespace-pre-wrap"
+                  )}
+                >
+                  {m.content || (sending && i === messages.length - 1 ? "…" : "")}
+                </div>
+              ))
+            )}
+            {error && <p className="text-seal text-xs text-center">{error}</p>}
+          </div>
+
+          {/* 移动端 max_tokens 滑条 + 输入 */}
+          <form onSubmit={onSubmit} className="border-t border-wood/20 p-2 sm:p-3 shrink-0 safe-bottom">
+            {/* 移动端:回复字数滑条 */}
+            <div className="sm:hidden mb-2 flex items-center gap-2 text-xs text-ink-light">
+              <span>回复字数</span>
+              <input
+                type="range"
+                min={200}
+                max={4000}
+                step={100}
+                value={maxTokens}
+                onChange={(e) => setMaxTokens(Number(e.target.value))}
+                className="flex-1 accent-bamboo"
+              />
+              <span className="w-10 text-right">{maxTokens}</span>
+            </div>
+            <div className="flex gap-2">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={sending ? "回答中…" : "说点什么…"}
+                disabled={sending}
+                className="flex-1 rounded border border-wood/30 bg-paper px-3 py-2 text-sm outline-none focus:border-bamboo"
+              />
+              <button
+                type="submit"
+                disabled={sending || !input.trim()}
+                className="rounded bg-bamboo text-paper px-3 sm:px-4 text-sm disabled:opacity-50"
+              >
+                发送
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

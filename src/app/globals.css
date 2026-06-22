@@ -87,3 +87,13 @@ mark.note-mark {
 
 /* 链接 */
 a { color: var(--color-bamboo-dark); }
+
+/* iOS safe-area(底部刘海/小白条留空) */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0); }
+.safe-top { padding-top: env(safe-area-inset-top, 0); }
+
+/* 移动端:正文区防止橡皮筋效果 */
+html, body { overscroll-behavior-y: none; touch-action: manipulation; }
+
+/* 防止长按选中文本时的高亮(配合 selection 库使用) */
+.reader-text { -webkit-user-select: text; user-select: text; }

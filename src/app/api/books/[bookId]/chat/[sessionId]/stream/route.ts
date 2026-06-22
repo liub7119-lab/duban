@@ -40,6 +40,7 @@ export async function POST(
   const selection: Selection | undefined = body.selection;
   const chapterIndex =
     typeof body.chapterIndex === "number" ? body.chapterIndex : session.chapterIndex ?? 0;
+  const maxTokens = typeof body.maxTokens === "number" ? Math.min(Math.max(body.maxTokens, 100), 4000) : 800;
 
   if (!message) return NextResponse.json({ error: "消息不能为空" }, { status: 400 });
 
@@ -90,6 +91,7 @@ export async function POST(
   const openaiStream = await ai().chat.completions.create({
     model,
     messages: messages.concat([{ role: "user", content: message }]),
+    max_tokens: maxTokens,
     stream: true,
     stream_options: { include_usage: true },
   });

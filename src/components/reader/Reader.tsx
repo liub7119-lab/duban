@@ -161,28 +161,28 @@ export function Reader({
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col">
       {/* 顶部工具栏 */}
-      <div className="border-b border-wood/20 bg-paper/70 backdrop-blur-sm px-6 h-12 flex items-center justify-between text-sm shrink-0">
+      <div className="border-b border-wood/20 bg-paper/70 backdrop-blur-sm px-3 sm:px-6 h-12 flex items-center justify-between text-sm shrink-0">
         <button
           onClick={() => setTocOpen(true)}
           className="flex items-center gap-1.5 text-ink-light hover:text-ink"
         >
-          <span className="text-lg">≡</span> 目录
+          <span className="text-lg">≡</span> <span className="hidden sm:inline">目录</span>
         </button>
-        <span className="text-ink-light truncate mx-4 flex-1 text-center">
-          {title} · 第 {chapterIdx + 1}/{chapters.length} 章
+        <span className="text-ink-light truncate mx-2 sm:mx-4 flex-1 text-center text-xs sm:text-sm">
+          <span className="hidden sm:inline">{title} · </span>第 {chapterIdx + 1}/{chapters.length} 章
         </span>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={() => setChatOpen(true)}
             className="text-bamboo-dark hover:text-bamboo font-medium"
           >
-            💬 边读边聊
+            💬 <span className="hidden sm:inline">边读边聊</span>
           </button>
           <button
             onClick={() => setSettingsOpen(true)}
             className="text-ink-light hover:text-ink"
           >
-            ⚙ 设置
+            ⚙ <span className="hidden sm:inline">设置</span>
           </button>
         </div>
       </div>
@@ -193,7 +193,7 @@ export function Reader({
         className="flex-1 overflow-auto"
       >
         <div
-          className="mx-auto max-w-2xl px-8 py-12"
+          className="mx-auto max-w-2xl px-4 sm:px-8 py-8 sm:py-12"
           style={
             vertical
               ? { writingMode: "vertical-rl" as const, maxHeight: "none" }
@@ -204,7 +204,7 @@ export function Reader({
             <p className="text-center text-ink-light py-20">展卷中…</p>
           ) : (
             <>
-              <h2 className="text-2xl font-bold text-center text-ink mb-8 tracking-widest">
+              <h2 className="text-xl sm:text-2xl font-bold text-center text-ink mb-6 sm:mb-8 tracking-widest">
                 {chapter.title}
               </h2>
               <article
@@ -316,14 +316,14 @@ export function Reader({
         />
       )}
 
-      {/* 边读边聊抽屉 */}
+      {/* 边读边聊抽屉 - 移动端全屏,桌面端右侧 */}
       {chatOpen && (
         <div className="fixed inset-0 z-40 flex">
           <div
-            className="flex-1 bg-ink/30"
+            className="hidden sm:block flex-1 bg-ink/30"
             onClick={() => setChatOpen(false)}
           />
-          <aside className="w-96 max-w-[90vw] bg-paper border-l border-wood/20 shadow-xl flex flex-col">
+          <aside className="w-full sm:w-96 max-w-[100vw] bg-paper border-l border-wood/20 shadow-xl flex flex-col">
             <ChatPanel
               bookId={bookId}
               chapterIndex={chapterIdx}

@@ -32,12 +32,12 @@ export function Library({ books }: { books: BookWithCount[] }) {
   }
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-10">
-      <div className="flex items-end justify-between mb-8 border-b border-wood/20 pb-4">
+    <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-6 sm:mb-8 border-b border-wood/20 pb-4 gap-3">
         <div>
-          <h1 className="text-3xl font-bold tracking-widest text-ink">书架</h1>
-          <p className="text-sm text-ink-light mt-1 tracking-wider">
-            共 {books.length} 卷 · 支持导入 EPUB / TXT / PDF
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-widest text-ink">书架</h1>
+          <p className="text-xs sm:text-sm text-ink-light mt-1 tracking-wider">
+            共 {books.length} 卷 · 支持 EPUB / TXT / PDF
           </p>
         </div>
         <button
@@ -63,7 +63,7 @@ export function Library({ books }: { books: BookWithCount[] }) {
       {books.length === 0 ? (
         <EmptyState onPick={() => inputRef.current?.click()} />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 sm:gap-6">
           {books.map((book) => (
             <BookCard key={book.id} book={book} />
           ))}
